@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — IntentApp</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap"
+    rel="stylesheet" />
+  <style>
+    /* ── RESET ─────────────────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    [x-cloak] {
+      display: none !important;
+    }
+
+    /* ── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --sw: 260px;
+      /* sidebar width */
+      --th: 64px;
+      /* topbar height */
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+      --text: #1E293B;
+      --muted: #64748B;
+      --accent: #6366F1;
+      --accent2: #8B5CF6;
+      --green: #10B981;
+      --blue: #3B82F6;
+      --purple: #8B5CF6;
+      --amber: #F59E0B;
+      --red: #EF4444;
+      --r: 14px;
+      --shadow: 0 2px 16px rgba(0, 0, 0, .07);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, .13);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    /* Sidebar always visible on desktop, slide-in on mobile */
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--sw);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 300;
+      box-shadow: var(--shadow);
+      transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .main-content {
+      margin-left: var(--sw);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .hamburger {
+        display: flex !important;
+      }
+    }
+
+    /* ── SIDEBAR INTERNALS ──────────────────────────────────── */
+    .sidebar-brand {
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .brand-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.45rem;
+      color: var(--text);
+      letter-spacing: -.5px;
+    }
+
+    .brand-logo span {
+      color: var(--accent);
+    }
+
+    .brand-sub {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-top: 2px;
+      letter-spacing: .3px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 12px;
+    }
+
+    .nav-section-label {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      color: var(--muted);
+      padding: 10px 8px 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: .88rem;
+      color: var(--muted);
+      font-weight: 500;
+      transition: background .15s, color .15s;
+      margin-bottom: 2px;
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      background: #F1F5F9;
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, #EEF2FF, #F5F3FF);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .nav-item .icon {
+      font-size: 1.05rem;
+      flex-shrink: 0;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: .62rem;
+      background: var(--accent);
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    .sidebar-footer {
+      padding: 14px 12px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      background: var(--bg);
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: .78rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .user-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: .84rem;
+    }
+
+    .user-email {
+      font-size: .7rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: color .2s;
+      padding: 4px;
+      border-radius: 6px;
+    }
+
+    .logout-btn:hover {
+      color: var(--red);
+    }
+
+    /* Overlay behind sidebar on mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .4);
+      z-index: 299;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-overlay {
+        display: block;
+      }
+    }
+
+    /* ── TOPBAR ─────────────────────────────────────────────── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      height: var(--th);
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Hidden by default; shown via media query */
+    .hamburger {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: var(--text);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      transition: background .2s;
+    }
+
+    .hamburger:hover {
+      background: #F1F5F9;
+    }
+
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.12rem;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: .95rem;
+      transition: background .2s;
+      position: relative;
+    }
+
+    .topbar-btn:hover {
+      background: #F1F5F9;
+    }
+
+    .notif-dot {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      border: 2px solid #fff;
+    }
+
+    /* ── CONTENT AREA ───────────────────────────────────────── */
+    .content-area {
+      flex: 1;
+      padding: 28px 28px 48px;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 600px) {
+      .content-area {
+        padding: 18px 14px 36px;
+      }
+    }
+
+    /* ── WELCOME BANNER ─────────────────────────────────────── */
+    .welcome-banner {
+      background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 55%, #A78BFA 100%);
+      border-radius: var(--r);
+      padding: 26px 32px;
+      color: #fff;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .07);
+      pointer-events: none;
+    }
+
+    .welcome-banner h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      margin-bottom: 5px;
+    }
+
+    .welcome-banner p {
+      font-size: .88rem;
+      opacity: .88;
+    }
+
+    .welcome-emoji {
+      font-size: 3rem;
+      line-height: 1;
+    }
+
+    @media (max-width: 520px) {
+      .welcome-emoji {
+        display: none;
+      }
+    }
+
+    /* ── STATS GRID ─────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 900px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      margin-bottom: 12px;
+    }
+
+    .stat-icon.maps {
+      background: #D1FAE5;
+    }
+
+    .stat-icon.cam {
+      background: #DBEAFE;
+    }
+
+    .stat-icon.share {
+      background: #EDE9FE;
+    }
+
+    .stat-icon.news {
+      background: #FEF3C7;
+    }
+
+    .stat-label {
+      font-size: .76rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.75rem;
+      color: var(--text);
+      margin: 3px 0;
+      line-height: 1;
+    }
+
+    .stat-change {
+      font-size: .73rem;
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    .stat-change.down {
+      color: var(--red);
+    }
+
+    /* ── SECTION HEADER ─────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.08rem;
+    }
+
+    .section-sub {
+      font-size: .77rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .view-all-btn {
+      font-size: .8rem;
+      color: var(--accent);
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: opacity .2s;
+    }
+
+    .view-all-btn:hover {
+      opacity: .7;
+    }
+
+    /* ── INTENT CARDS GRID ──────────────────────────────────── */
+    .intent-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 580px) {
+      .intent-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .intent-card {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 22px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .22s cubic-bezier(.4, 0, .2, 1), box-shadow .22s;
+    }
+
+    .intent-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* coloured top bar */
+    .intent-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: var(--r) var(--r) 0 0;
+    }
+
+    .intent-card.maps::after {
+      background: var(--green);
+    }
+
+    .intent-card.camera::after {
+      background: var(--blue);
+    }
+
+    .intent-card.share::after {
+      background: var(--purple);
+    }
+
+    .intent-card.news::after {
+      background: var(--amber);
+    }
+
+    .intent-icon-wrap {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      display: block;
+      line-height: 1;
+    }
+
+    .intent-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: .98rem;
+      margin-bottom: 5px;
+    }
+
+    .intent-desc {
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .intent-badge {
+      display: inline-block;
+      font-size: .65rem;
+      font-family: 'Courier New', monospace;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #F1F5F9;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .intent-arrow {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: .95rem;
+      color: var(--muted);
+      opacity: .35;
+    }
+
+    /* ── ACTIVITY LIST ──────────────────────────────────────── */
+    .activity-card {
+      background: var(--surface);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 13px 20px;
+      border-bottom: 1px solid #F1F5F9;
+      transition: background .14s;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-item:hover {
+      background: #F8FAFC;
+    }
+
+    .activity-dot {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .95rem;
+      flex-shrink: 0;
+    }
+
+    .activity-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .activity-title {
+      font-weight: 600;
+      font-size: .86rem;
+    }
+
+    .activity-time {
+      font-size: .73rem;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .activity-status {
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── SETTINGS ───────────────────────────────────────────── */
+    .settings-card {
+      background: var(--surface);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      border-bottom: 1px solid #F1F5F9;
+      flex-wrap: wrap;
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      font-weight: 600;
+      font-size: .88rem;
+      flex: 1;
+      min-width: 130px;
+    }
+
+    .setting-desc {
+      font-size: .76rem;
+      color: var(--muted);
+      flex: 2;
+      min-width: 160px;
+    }
+
+    .setting-select {
+      padding: 7px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: .83rem;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .setting-select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Toggle switch */
+    .setting-toggle {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .setting-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #CBD5E1;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background .28s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+      transition: transform .28s;
+    }
+
+    .setting-toggle input:checked+.toggle-slider {
+      background: var(--accent);
+    }
+
+    .setting-toggle input:checked+.toggle-slider::before {
+      transform: translateX(20px);
+    }
+
+    /* ── MODAL OVERLAY ──────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .52);
+      backdrop-filter: blur(5px);
+      z-index: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 32px 26px 24px;
+      width: 100%;
+      max-width: 440px;
+      max-height: 88vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn .2s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .modal-box-wide {
+      max-width: 560px;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(.96) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: #F1F5F9;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: .82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .18s, color .18s;
+    }
+
+    .modal-close:hover {
+      background: #E2E8F0;
+      color: var(--text);
+    }
+
+    .modal-icon {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+
+    .modal-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.22rem;
+      margin-bottom: 5px;
+    }
+
+    .modal-desc {
+      font-size: .84rem;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 18px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      font-size: .88rem;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      outline: none;
+      background: var(--bg);
+      resize: vertical;
+      transition: border-color .18s, background .18s;
+      display: block;
+    }
+
+    .modal-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    /* Labels inside modals */
+    .field-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+      color: var(--muted);
+      margin: 14px 0 8px;
+    }
+
+    /* Quick location chips */
+    .location-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 4px;
+    }
+
+    .chip {
+      padding: 5px 11px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      font-size: .76rem;
+      cursor: pointer;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      transition: all .16s;
+    }
+
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #EEF2FF;
+    }
+
+    /* Camera choice grid */
+    .cam-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .cam-btn {
+      padding: 18px 10px;
+      border-radius: 13px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .cam-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .cam-btn.photo:hover {
+      border-color: var(--blue);
+      background: #DBEAFE;
+    }
+
+    .cam-btn.video:hover {
+      border-color: var(--red);
+      background: #FEE2E2;
+    }
+
+    .cam-icon {
+      font-size: 1.9rem;
+      margin-bottom: 6px;
+    }
+
+    .cam-title {
+      font-weight: 700;
+      font-size: .87rem;
+      margin-bottom: 3px;
+    }
+
+    .cam-sub {
+      font-size: .67rem;
+      color: var(--muted);
+      font-family: monospace;
+    }
+
+    /* Share apps grid */
+    .share-apps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 400px) {
+      .share-apps {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .share-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 9px 4px;
+      border-radius: 11px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all .16s;
+    }
+
+    .share-btn:hover,
+    .share-btn.active {
+      border-color: var(--accent);
+      background: #EEF2FF;
+    }
+
+    .share-btn-icon {
+      font-size: 1.35rem;
+    }
+
+    .share-btn-label {
+      font-size: .64rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* News / socmed grids */
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .social-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 420px) {
+      .news-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .social-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .news-tile {
+      padding: 12px;
+      border-radius: 11px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      transition: all .17s;
+    }
+
+    .news-tile:hover {
+      border-color: var(--amber);
+      background: #FFFBEB;
+      transform: translateY(-1px);
+    }
+
+    .news-tile.social:hover {
+      border-color: var(--accent);
+      background: #EEF2FF;
+    }
+
+    .tile-cat {
+      font-size: .66rem;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .tile-title {
+      font-weight: 700;
+      font-size: .86rem;
+    }
+
+    .tile-emoji {
+      font-size: 1.75rem;
+      margin-bottom: 3px;
+      line-height: 1;
+    }
+
+    .tile-name {
+      font-size: .76rem;
+      font-weight: 600;
+    }
+
+    /* Intent code box */
+    .code-box {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: #F8FAFC;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    .code-label {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .code-snippet {
+      display: block;
+      font-family: 'Courier New', monospace;
+      font-size: .75rem;
+      color: var(--accent);
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    /* Modal action buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      margin-top: 14px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-weight: 600;
+      font-size: .9rem;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: opacity .18s, transform .15s;
+    }
+
+    .btn-primary:hover {
+      opacity: .88;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 11px;
+      margin-top: 9px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: .86rem;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background .16s, color .16s;
+    }
+
+    .btn-secondary:hover {
+      background: #F1F5F9;
+      color: var(--text);
+    }
+
+    /* ── TOAST ──────────────────────────────────────────────── */
+    .toast-wrap {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1E293B;
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-size: .83rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      animation: toastIn .22s cubic-bezier(.4, 0, .2, 1);
+      pointer-events: all;
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateX(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* mt utilities */
+    .mt-2 {
+      margin-top: 8px;
+    }
+
+    .mt-3 {
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<!--
+  x-data lives on <body> so ALL child elements (sidebar, main, modals)
+  share the same Alpine scope. Functions use proper JS syntax — no
+  shorthand default params inside Alpine template strings.
+-->
+
+<body x-data="appData()">
+
+  <!-- ── SIDEBAR OVERLAY (mobile) ─────────────────────────── -->
+  <div class="sidebar-overlay" x-show="sidebarOpen" x-cloak @click="sidebarOpen = false">
+  </div>
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────── -->
+  <aside class="sidebar" :class="{ open: sidebarOpen }">
+    <div class="sidebar-brand">
+      <div class="brand-logo">Intent<span>App</span></div>
+      <div class="brand-sub">Implicit Intent Platform</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Utama</div>
+      <a class="nav-item" :class="{ active: activeNav === 'dashboard' }"
+        @click="activeNav = 'dashboard'; sidebarOpen = false">
+        <span class="icon">🏠</span> Dashboard
+      </a>
+
+      <div class="nav-section-label">Implicit Intent</div>
+      <a class="nav-item" @click="modal = 'maps'; sidebarOpen = false">
+        <span class="icon">📍</span> Google Maps
+      </a>
+      <a class="nav-item" @click="modal = 'camera'; sidebarOpen = false">
+        <span class="icon">📷</span> Kamera
+        <span class="nav-badge">Baru</span>
+      </a>
+      <a class="nav-item" @click="modal = 'share'; sidebarOpen = false">
+        <span class="icon">💬</span> Kirim Teks
+      </a>
+      <a class="nav-item" @click="modal = 'news'; sidebarOpen = false">
+        <span class="icon">📰</span> Berita &amp; Sosmed
+      </a>
+
+      <div class="nav-section-label">Lainnya</div>
+      <a class="nav-item" :class="{ active: activeNav === 'history' }"
+        @click="activeNav = 'history'; sidebarOpen = false">
+        <span class="icon">📋</span> Riwayat Intent
+      </a>
+      <a class="nav-item" :class="{ active: activeNav === 'settings' }"
+        @click="activeNav = 'settings'; sidebarOpen = false">
+        <span class="icon">⚙️</span> Pengaturan
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">JD</div>
+        <div class="user-info">
+          <div class="user-name">John Doe</div>
+          <div class="user-email">john@email.com</div>
+        </div>
+        <button class="logout-btn" @click="addToast('Sampai jumpa!', '👋')" title="Logout">⏏</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" @click="sidebarOpen = !sidebarOpen">☰</button>
+        <div class="page-title" x-text="activeNav === 'dashboard' ? 'Dashboard'
+                : activeNav === 'history'   ? 'Riwayat Intent'
+                : 'Pengaturan'">
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-btn" title="Notifikasi">
+          🔔
+          <div class="notif-dot"></div>
+        </div>
+        <div class="topbar-btn" title="Bantuan">❓</div>
+        <div class="user-avatar" title="Profile">JD</div>
+      </div>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <main class="content-area">
+
+      <!-- ════════════════════ DASHBOARD ════════════════════ -->
+      <div x-show="activeNav === 'dashboard'" x-cloak>
+
+        <!-- Welcome -->
+        <div class="welcome-banner">
+          <div>
+            <h2>Selamat datang, John! 👋</h2>
+            <p>Kelola semua Implicit Intent Android Anda dalam satu dashboard.</p>
+          </div>
+          <div class="welcome-emoji">📱</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon maps">📍</div>
+            <div class="stat-label">Maps Dibuka</div>
+            <div class="stat-value">24</div>
+            <div class="stat-change">↑ 12% minggu ini</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon cam">📷</div>
+            <div class="stat-label">Foto Diambil</div>
+            <div class="stat-value">87</div>
+            <div class="stat-change">↑ 8% minggu ini</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon share">💬</div>
+            <div class="stat-label">Pesan Terkirim</div>
+            <div class="stat-value">156</div>
+            <div class="stat-change">↑ 24% minggu ini</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon news">📰</div>
+            <div class="stat-label">Artikel Dibuka</div>
+            <div class="stat-value">43</div>
+            <div class="stat-change down">↓ 3% minggu ini</div>
+          </div>
+        </div>
+
+        <!-- Intent Feature Cards -->
+        <div class="section-header">
+          <div>
+            <div class="section-title">Fitur Implicit Intent</div>
+            <div class="section-sub">Tap kartu untuk mengakses fitur</div>
+          </div>
+        </div>
+        <div class="intent-grid">
+          <div class="intent-card maps" @click="modal = 'maps'">
+            <span class="intent-icon-wrap">📍</span>
+            <div class="intent-name">Google Maps</div>
+            <div class="intent-desc">Buka Google Maps untuk mencari lokasi, navigasi, atau melihat peta interaktif.
+            </div>
+            <span class="intent-badge">ACTION_VIEW + geo URI</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+          <div class="intent-card camera" @click="modal = 'camera'">
+            <span class="intent-icon-wrap">📷</span>
+            <div class="intent-name">Kamera</div>
+            <div class="intent-desc">Buka kamera perangkat untuk mengambil foto atau merekam video secara langsung.
+            </div>
+            <span class="intent-badge">ACTION_IMAGE_CAPTURE</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+          <div class="intent-card share" @click="modal = 'share'">
+            <span class="intent-icon-wrap">💬</span>
+            <div class="intent-name">Kirim Teks</div>
+            <div class="intent-desc">Bagikan teks ke WhatsApp, Telegram, Twitter, SMS, atau aplikasi lain yang tersedia.
+            </div>
+            <span class="intent-badge">ACTION_SEND text/plain</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+          <div class="intent-card news" @click="modal = 'news'">
+            <span class="intent-icon-wrap">📰</span>
+            <div class="intent-name">Berita &amp; Media Sosial</div>
+            <div class="intent-desc">Buka aplikasi berita atau platform media sosial langsung dari dalam aplikasi.</div>
+            <span class="intent-badge">ACTION_VIEW + URL</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+        </div>
+
+        <!-- Recent Activity (preview: max 6) -->
+        <div class="section-header">
+          <div>
+            <div class="section-title">Riwayat Aktivitas</div>
+            <div class="section-sub">Intent yang terakhir digunakan</div>
+          </div>
+          <!-- FIX: was a dead href="#"; now uses @click to navigate -->
+          <button class="view-all-btn" @click="activeNav = 'history'; window.scrollTo({top:0,behavior:'smooth'})">
+            Lihat semua →
+          </button>
+        </div>
+        <div class="activity-card">
+          <template x-for="(act, i) in activities.slice(0, 6)" :key="i">
+            <div class="activity-item">
+              <div class="activity-dot" :style="'background:' + act.color">
+                <span x-text="act.icon"></span>
+              </div>
+              <div class="activity-info">
+                <div class="activity-title" x-text="act.title"></div>
+                <div class="activity-time" x-text="act.desc + ' · ' + act.time"></div>
+              </div>
+              <div class="activity-status" :style="'background:' + act.statusColor + ';color:' + act.statusText"
+                x-text="act.status">
+              </div>
+            </div>
+          </template>
+        </div>
+
+      </div><!-- /dashboard -->
+
+      <!-- ════════════════════ HISTORY ══════════════════════ -->
+      <div x-show="activeNav === 'history'" x-cloak>
+        <div class="section-header">
+          <div>
+            <div class="section-title">Riwayat Intent</div>
+            <div class="section-sub">Log lengkap semua aktivitas Intent yang telah dilakukan</div>
+          </div>
+        </div>
+        <div class="activity-card">
+          <template x-for="(act, i) in activities" :key="i">
+            <div class="activity-item">
+              <div class="activity-dot" :style="'background:' + act.color">
+                <span x-text="act.icon"></span>
+              </div>
+              <div class="activity-info">
+                <div class="activity-title" x-text="act.title"></div>
+                <div class="activity-time" x-text="act.desc + ' · ' + act.time"></div>
+              </div>
+              <div class="activity-status" :style="'background:' + act.statusColor + ';color:' + act.statusText"
+                x-text="act.status">
+              </div>
+            </div>
+          </template>
+        </div>
+      </div><!-- /history -->
+
+      <!-- ════════════════════ SETTINGS ═════════════════════ -->
+      <div x-show="activeNav === 'settings'" x-cloak>
+        <div class="section-header">
+          <div>
+            <div class="section-title">Pengaturan</div>
+            <div class="section-sub">Konfigurasi aplikasi dan preferensi</div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="setting-item">
+            <div class="setting-label">Tema Aplikasi</div>
+            <div class="setting-desc">Pilih tema yang sesuai dengan preferensi Anda</div>
+            <select class="setting-select">
+              <option>Terang</option>
+              <option>Gelap</option>
+              <option>Otomatis</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">Notifikasi</div>
+            <div class="setting-desc">Aktifkan notifikasi untuk aktivitas Intent</div>
+            <label class="setting-toggle">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">Bahasa</div>
+            <div class="setting-desc">Pilih bahasa aplikasi</div>
+            <select class="setting-select">
+              <option>Indonesia</option>
+              <option>English</option>
+            </select>
+          </div>
+        </div>
+      </div><!-- /settings -->
+
+    </main>
+  </div><!-- /main-content -->
+
+  <!-- ═══════════════════════ MODALS ══════════════════════════
+       All modals are siblings of .main-content, INSIDE <body>.
+       They each check their own condition via x-show.
+  ═══════════════════════════════════════════════════════════ -->
+
+  <!-- ── MAPS MODAL ────────────────────────────────────────── -->
+  <div class="modal-overlay" x-show="modal === 'maps'" x-cloak @click.self="modal = null">
+    <div class="modal-box">
+      <button class="modal-close" @click="modal = null">✕</button>
+      <div class="modal-icon">📍</div>
+      <div class="modal-title">Buka Google Maps</div>
+      <div class="modal-desc">Masukkan nama lokasi atau tempat yang ingin Anda cari di Google Maps.</div>
+
+      <input class="modal-input" type="text" placeholder="Cth: Monas, Jakarta" x-model="mapQuery"
+        @keyup.enter="openMaps()" />
+
+      <div class="field-label">Lokasi Cepat</div>
+      <div class="location-chips">
+        <template x-for="loc in ['Monas Jakarta','Borobudur Temple','Bali Beach','Raja Ampat','Komodo Island']"
+          :key="loc">
+          <button class="chip" @click="mapQuery = loc" x-text="loc"></button>
+        </template>
+      </div>
+
+      <button class="btn-primary" @click="openMaps()">📍 Buka Google Maps</button>
+      <button class="btn-secondary" @click="modal = null">Batal</button>
+
+      <div class="code-box">
+        <div class="code-label">📌 Intent Android</div>
+        <code class="code-snippet">Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=..."))</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CAMERA MODAL ───────────────────────────────────────── -->
+  <div class="modal-overlay" x-show="modal === 'camera'" x-cloak @click.self="modal = null">
+    <div class="modal-box">
+      <button class="modal-close" @click="modal = null">✕</button>
+      <div class="modal-icon">📷</div>
+      <div class="modal-title">Buka Kamera</div>
+      <div class="modal-desc">Gunakan kamera perangkat Anda untuk mengambil foto atau merekam video.</div>
+
+      <div class="cam-grid">
+        <button class="cam-btn photo" @click="openCamera()">
+          <div class="cam-icon">📸</div>
+          <div class="cam-title">Ambil Foto</div>
+          <div class="cam-sub">ACTION_IMAGE_CAPTURE</div>
+        </button>
+        <button class="cam-btn video" @click="openVideo()">
+          <div class="cam-icon">🎥</div>
+          <div class="cam-title">Rekam Video</div>
+          <div class="cam-sub">ACTION_VIDEO_CAPTURE</div>
+        </button>
+      </div>
+
+      <div class="code-box">
+        <div class="code-label">📌 Intent Android</div>
+        <code class="code-snippet">Intent(MediaStore.ACTION_IMAGE_CAPTURE)</code>
+      </div>
+      <button class="btn-secondary mt-3" @click="modal = null">Tutup</button>
+    </div>
+  </div>
+
+  <!-- ── SHARE MODAL ────────────────────────────────────────── -->
+  <div class="modal-overlay" x-show="modal === 'share'" x-cloak @click.self="modal = null">
+    <div class="modal-box">
+      <button class="modal-close" @click="modal = null">✕</button>
+      <div class="modal-icon">💬</div>
+      <div class="modal-title">Kirim Teks</div>
+      <div class="modal-desc">Tulis pesan Anda dan pilih aplikasi tujuan pengiriman.</div>
+
+      <textarea class="modal-input" rows="3" placeholder="Tulis pesan di sini..." x-model="shareText">
+      </textarea>
+
+      <div class="field-label">Kirim via</div>
+      <div class="share-apps">
+        <template x-for="app in shareApps" :key="app.id">
+          <button class="share-btn" :class="{ active: shareTarget === app.id }" @click="shareTarget = app.id">
+            <div class="share-btn-icon" x-text="app.icon"></div>
+            <div class="share-btn-label" x-text="app.label"></div>
+          </button>
+        </template>
+      </div>
+
+      <button class="btn-primary" @click="doShare()">💬 Kirim Sekarang</button>
+      <button class="btn-secondary" @click="modal = null">Batal</button>
+
+      <div class="code-box">
+        <div class="code-label">📌 Intent Android</div>
+        <code
+          class="code-snippet">Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(EXTRA_TEXT,"...") }</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NEWS MODAL ─────────────────────────────────────────── -->
+  <div class="modal-overlay" x-show="modal === 'news'" x-cloak @click.self="modal = null">
+    <div class="modal-box modal-box-wide">
+      <button class="modal-close" @click="modal = null">✕</button>
+      <div class="modal-icon">📰</div>
+      <div class="modal-title">Berita &amp; Media Sosial</div>
+      <div class="modal-desc">Pilih platform yang ingin Anda buka.</div>
+
+      <div class="field-label">📰 Portal Berita</div>
+      <div class="news-grid" style="margin-bottom:18px">
+        <template x-for="site in newsSites" :key="site.name">
+          <div class="news-tile" @click="openNews(site.url, site.name)">
+            <div class="tile-cat" x-text="site.emoji + ' ' + site.cat"></div>
+            <div class="tile-title" x-text="site.name"></div>
+          </div>
+        </template>
+      </div>
+
+      <div class="field-label">📱 Media Sosial</div>
+      <div class="social-grid">
+        <template x-for="s in socialLinks" :key="s.name">
+          <div class="news-tile social" @click="openNews(s.url, s.name)">
+            <div class="tile-emoji" x-text="s.emoji"></div>
+            <div class="tile-name" x-text="s.name"></div>
+          </div>
+        </template>
+      </div>
+
+      <div class="code-box">
+        <div class="code-label">📌 Intent Android</div>
+        <code class="code-snippet">Intent(Intent.ACTION_VIEW, Uri.parse("https://kompas.com"))</code>
+      </div>
+      <button class="btn-secondary mt-2" @click="modal = null">Tutup</button>
+    </div>
+  </div>
+
+  <!-- ── TOASTS ─────────────────────────────────────────────── -->
+  <div class="toast-wrap">
+    <template x-for="t in toasts" :key="t.id">
+      <div class="toast">
+        <span x-text="t.emoji"></span>
+        <span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <!-- Alpine.js — loaded LAST so DOM is fully parsed first -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script>
+    /**
+     * appData() is defined as a plain JS function and registered
+     * via Alpine.data(). This avoids all quirks of embedding
+     * complex JS inside an HTML attribute string (quoting,
+     * template-literal, default-param, etc.).
+     */
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('appData', () => ({
+
+        /* ── state ── */
+        sidebarOpen: false,
+        modal: null,
+        activeNav: 'dashboard',
+        mapQuery: 'Jakarta, Indonesia',
+        shareText: 'Halo! Saya menggunakan IntentApp - platform Android pintar 🚀',
+        shareTarget: 'whatsapp',
+        toasts: [],
+
+        /* static lists kept here so templates stay clean */
+        shareApps: [
+          { id: 'whatsapp', icon: '💬', label: 'WhatsApp' },
+          { id: 'telegram', icon: '✈️', label: 'Telegram' },
+          { id: 'twitter', icon: '🐦', label: 'X/Twitter' },
+          { id: 'sms', icon: '📱', label: 'SMS' },
+          { id: 'native', icon: '🔗', label: 'Bagikan' },
+        ],
+        newsSites: [
+          { name: 'Kompas', url: 'https://www.kompas.com', emoji: '🗞️', cat: 'Umum' },
+          { name: 'Detik.com', url: 'https://www.detik.com', emoji: '📡', cat: 'Umum' },
+          { name: 'Tempo', url: 'https://www.tempo.co', emoji: '📋', cat: 'Investigasi' },
+          { name: 'CNN Indonesia', url: 'https://www.cnnindonesia.com', emoji: '📺', cat: 'Internasional' },
+        ],
+        socialLinks: [
+          { name: 'Instagram', url: 'https://www.instagram.com', emoji: '📸' },
+          { name: 'Twitter/X', url: 'https://www.twitter.com', emoji: '🐦' },
+          { name: 'TikTok', url: 'https://www.tiktok.com', emoji: '🎵' },
+          { name: 'YouTube', url: 'https://www.youtube.com', emoji: '▶️' },
+          { name: 'Facebook', url: 'https://www.facebook.com', emoji: '👥' },
+          { name: 'LinkedIn', url: 'https://www.linkedin.com', emoji: '💼' },
+        ],
+
+        activities: [
+          { icon: '📍', title: 'Buka Google Maps', desc: 'Lokasi: Jakarta', time: '2 menit lalu', status: 'Berhasil', color: '#10B981', statusColor: '#DCFCE7', statusText: '#166534' },
+          { icon: '📷', title: 'Ambil Foto', desc: 'Kamera utama', time: '5 menit lalu', status: 'Berhasil', color: '#3B82F6', statusColor: '#DBEAFE', statusText: '#1E40AF' },
+          { icon: '💬', title: 'Bagikan Teks', desc: 'Ke WhatsApp', time: '10 menit lalu', status: 'Berhasil', color: '#8B5CF6', statusColor: '#EDE9FE', statusText: '#5B21B6' },
+          { icon: '📰', title: 'Buka Berita', desc: 'Kompas.com', time: '15 menit lalu', status: 'Berhasil', color: '#F59E0B', statusColor: '#FEF3C7', statusText: '#92400E' },
+          { icon: '📍', title: 'Buka Google Maps', desc: 'Lokasi: Bandung', time: '1 jam lalu', status: 'Berhasil', color: '#10B981', statusColor: '#DCFCE7', statusText: '#166534' },
+          { icon: '📷', title: 'Ambil Video', desc: 'Kamera depan', time: '2 jam lalu', status: 'Berhasil', color: '#3B82F6', statusColor: '#DBEAFE', statusText: '#1E40AF' },
+        ],
+
+        /* colour map for addActivity */
+        _colorOf(icon) {
+          return { '📍': '#10B981', '📷': '#3B82F6', '💬': '#8B5CF6', '📰': '#F59E0B' }[icon] || '#6366F1';
+        },
+
+        /* ── helpers ── */
+        addToast(msg, emoji) {
+          const id = Date.now();
+          emoji = emoji || '✅';
+          this.toasts.push({ id, msg, emoji });
+          setTimeout(() => {
+            this.toasts = this.toasts.filter(t => t.id !== id);
+          }, 3000);
+        },
+
+        addActivity(icon, title, desc, status) {
+          status = status || 'Berhasil';
+          const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          const color = this._colorOf(icon);
+          const statusColor = status === 'Berhasil' ? '#DCFCE7' : '#FEE2E2';
+          const statusText = status === 'Berhasil' ? '#166534' : '#991B1B';
+          this.activities.unshift({ icon, title, desc, time, status, color, statusColor, statusText });
+          if (this.activities.length > 20) this.activities.pop();
+        },
+
+        /* ── feature actions ── */
+        openMaps() {
+          const q = encodeURIComponent(this.mapQuery || 'Jakarta');
+          window.open('https://www.google.com/maps/search/?api=1&query=' + q, '_blank');
+          this.addToast('Membuka Google Maps...', '📍');
+          this.addActivity('📍', 'Buka Google Maps', 'Lokasi: ' + (this.mapQuery || 'Jakarta'));
+          this.modal = null;
+        },
+
+        openCamera() {
+          const self = this;
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*';
+          input.capture = 'environment';
+          input.onchange = function () {
+            self.addToast('Foto berhasil diambil!', '📷');
+            self.addActivity('📷', 'Ambil Foto', 'Kamera utama');
+          };
+          input.click();
+          this.modal = null;
+        },
+
+        openVideo() {
+          const self = this;
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'video/*';
+          input.capture = 'camcorder';
+          input.onchange = function () {
+            self.addToast('Video berhasil direkam!', '🎥');
+            self.addActivity('📷', 'Rekam Video', 'Kamera depan');
+          };
+          input.click();
+          this.modal = null;
+        },
+
+        doShare() {
+          const text = this.shareText;
+          const target = this.shareTarget;
+
+          if (target === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+          else if (target === 'telegram') window.open('https://t.me/share/url?url=https://intentapp.id&text=' + encodeURIComponent(text), '_blank');
+          else if (target === 'twitter') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank');
+          else if (target === 'sms') window.open('sms:?body=' + encodeURIComponent(text));
+          else if (target === 'native') {
+            if (navigator.share) {
+              navigator.share({ title: 'IntentApp', text: text });
+            } else {
+              navigator.clipboard.writeText(text);
+              this.addToast('Teks disalin ke clipboard!', '📋');
+            }
+          } else {
+            navigator.clipboard.writeText(text);
+            this.addToast('Teks disalin ke clipboard!', '📋');
+          }
+
+          const app = this.shareApps.find(a => a.id === target);
+          const label = app ? app.label : target;
+          if (target !== 'native') this.addToast('Membuka ' + label + '...', '💬');
+          this.addActivity('💬', 'Bagikan Teks', 'Ke ' + label);
+          this.modal = null;
+        },
+
+        openNews(url, name) {
+          window.open(url, '_blank');
+          this.addToast('Membuka ' + name + '...', '📰');
+          this.addActivity('📰', 'Buka Berita', name);
+          this.modal = null;
+        },
+      }));
+    });
+  </script>
+
+</body>
+
+</html>
