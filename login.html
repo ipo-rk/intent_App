@@ -10,6 +10,12 @@
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
     rel="stylesheet" />
   <link href="style.css" rel="stylesheet" />
+  <!-- Auth Check: Redirect to dashboard if already logged in -->
+  <script>
+    if (localStorage.getItem('intentapp-authenticated') === 'true') {
+      window.location.href = 'index.html';
+    }
+  </script>
   <!-- Alpine.js LAST, with defer, so DOM is ready -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -61,7 +67,9 @@
         this.loading = true;
         await new Promise(r => setTimeout(r, 1500));
         this.loading = false;
-        /* BUG FIX: navigasi ke index.html (dashboard), bukan dashboard.html */
+        /* Set authentication state */
+        localStorage.setItem('intentapp-authenticated', 'true');
+        localStorage.setItem('intentapp-user', this.email);
         window.location.href = 'index.html';
       }
     }">

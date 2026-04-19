@@ -80,9 +80,7 @@
           <div class="user-name">User</div>
           <div class="user-email">user@email.com</div>
         </div>
-        <button class="logout-btn"
-          @click="addToast('Sampai jumpa!','👋'); setTimeout(() => window.location.href = 'login.html', 900);"
-          title="Logout">⏏</button>
+        <button class="logout-btn" @click="logout()" title="Logout">⏏</button>
       </div>
     </div>
   </aside>
@@ -510,6 +508,12 @@
   </div>
 
   <!-- Alpine.js — loaded LAST so DOM is fully parsed first -->
+  <script>
+    // ── AUTH CHECK ── Redirect to login if not authenticated
+    if (localStorage.getItem('intentapp-authenticated') !== 'true') {
+      window.location.href = 'login.html';
+    }
+  </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <script>
@@ -544,6 +548,13 @@
           localStorage.setItem('intentapp-darkmode', this.darkMode);
           this.applyDarkMode();
           this.addToast(this.darkMode ? 'Mode gelap aktif 🌙' : 'Mode terang aktif ☀️', '🎨');
+        },
+
+        logout() {
+          this.addToast('Sampai jumpa!', '👋');
+          localStorage.removeItem('intentapp-authenticated');
+          localStorage.removeItem('intentapp-user');
+          setTimeout(() => { window.location.href = 'login.html'; }, 900);
         },
 
         /* ── Form state ── */
