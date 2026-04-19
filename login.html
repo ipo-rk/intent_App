@@ -6,21 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — IntentApp</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
     rel="stylesheet" />
   <link href="style.css" rel="stylesheet" />
-</head>
-</link>
+  <!-- Alpine.js LAST, with defer, so DOM is ready -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body>
+<!-- BUG FIX: body class scopes CSS so login/register left-panel styles don't collide -->
+
+<body class="auth-page login">
 
   <!-- LEFT PANEL -->
   <div class="left-panel d-none d-md-flex">
-    <div class="brand-logo">Intent<span>App</span></div>
+    <a href="login.html" class="brand-logo">Intent<span>App</span></a>
     <div class="left-tagline">
       <h2>Hubungkan<br />semua <em>aplikasi</em><br />dalam satu genggaman.</h2>
       <p>Platform Android pintar yang mengintegrasikan Maps, Kamera, Pesan, dan Media Sosial dengan Implicit Intent.</p>
@@ -28,7 +28,7 @@
         <span class="chip">📍 Google Maps</span>
         <span class="chip">📷 Kamera</span>
         <span class="chip">💬 Kirim Teks</span>
-        <span class="chip">📰 Berita & Sosmed</span>
+        <span class="chip">📰 Berita &amp; Sosmed</span>
       </div>
     </div>
     <div class="left-footer">© 2025 IntentApp. Semua hak dilindungi.</div>
@@ -42,34 +42,42 @@
       email: '',
       password: '',
       errors: {},
+
       validate() {
         this.errors = {};
-        if (!this.email) this.errors.email = 'Email wajib diisi';
-        else if (!/\S+@\S+\.\S+/.test(this.email)) this.errors.email = 'Format email tidak valid';
-        if (!this.password) this.errors.password = 'Password wajib diisi';
-        else if (this.password.length < 6) this.errors.password = 'Min. 6 karakter';
+        if (!this.email)
+          this.errors.email = 'Email wajib diisi';
+        else if (!/\S+@\S+\.\S+/.test(this.email))
+          this.errors.email = 'Format email tidak valid';
+        if (!this.password)
+          this.errors.password = 'Password wajib diisi';
+        else if (this.password.length < 6)
+          this.errors.password = 'Min. 6 karakter';
         return Object.keys(this.errors).length === 0;
       },
+
       async submit() {
         if (!this.validate()) return;
         this.loading = true;
         await new Promise(r => setTimeout(r, 1500));
         this.loading = false;
-        window.location.href = 'dashboard.html';
+        /* BUG FIX: navigasi ke index.html (dashboard), bukan dashboard.html */
+        window.location.href = 'index.html';
       }
     }">
+
       <!-- Mobile brand -->
-      <div class="brand-logo d-md-none mb-4 mobile-brand">
+      <a href="login.html" class="mobile-brand d-md-none mb-4 d-inline-block">
         Intent<span style="color:var(--accent)">App</span>
-      </div>
+      </a>
 
       <h1>Selamat Datang</h1>
       <p class="subtitle">Masuk ke akun Anda untuk melanjutkan</p>
 
       <div class="mt-4">
-        <!-- Google -->
-        <button class="btn-google mb-3" type="button">
-          <svg width="18" height="18" viewBox="0 0 48 48">
+        <!-- Google SSO -->
+        <button class="btn-google mb-3" type="button" @click="alert('Login Google belum terhubung ke backend.')">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#EA4335"
               d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
             <path fill="#4285F4"
@@ -89,31 +97,36 @@
       <div>
         <!-- Email -->
         <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" placeholder="nama@email.com" x-model="email"
-            :class="errors.email ? 'border-danger' : ''" />
-          <div class="error-msg" x-show="errors.email" x-text="'⚠ ' + errors.email"></div>
+          <label class="form-label" for="login-email">Email</label>
+          <input id="login-email" type="email" class="form-control" placeholder="nama@email.com" x-model="email"
+            :class="errors.email ? 'is-invalid' : ''" @keyup.enter="submit()" />
+          <div class="error-msg" x-show="errors.email" x-cloak x-text="'⚠ ' + errors.email"></div>
         </div>
+
         <!-- Password -->
         <div class="mb-2">
-          <label class="form-label">Password</label>
+          <label class="form-label" for="login-pass">Password</label>
           <div class="input-group">
-            <input :type="showPass ? 'text' : 'password'" class="form-control" placeholder="Masukkan password"
-              x-model="password" :class="errors.password ? 'border-danger' : ''" />
-            <span class="input-group-text" @click="showPass = !showPass">
+            <input id="login-pass" :type="showPass ? 'text' : 'password'" class="form-control"
+              placeholder="Masukkan password" x-model="password" :class="errors.password ? 'is-invalid' : ''"
+              @keyup.enter="submit()" />
+            <span class="input-group-text" @click="showPass = !showPass"
+              :aria-label="showPass ? 'Sembunyikan password' : 'Tampilkan password'">
               <span x-text="showPass ? '🙈' : '👁️'"></span>
             </span>
           </div>
-          <div class="error-msg" x-show="errors.password" x-text="'⚠ ' + errors.password"></div>
+          <div class="error-msg" x-show="errors.password" x-cloak x-text="'⚠ ' + errors.password"></div>
         </div>
-        <!-- Forgot -->
+
+        <!-- Lupa password -->
         <div class="text-end mb-4">
           <a href="forgot_password.html" class="link-accent forgot-link">Lupa password?</a>
         </div>
+
         <!-- Submit -->
         <button class="btn-primary-custom" @click="submit()" :disabled="loading">
           <span x-show="!loading">Masuk Sekarang →</span>
-          <span x-show="loading">
+          <span x-show="loading" x-cloak>
             <span class="spinner-border spinner-border-sm me-2"></span>Memproses...
           </span>
         </button>

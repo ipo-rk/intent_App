@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — IntentApp</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<!--
+  Parent body scope handles global state.
+  @cam:saved.window   — emitted by nested camera scope → log activity + close
+  @cam:forceclose fired by closeCameraModal() → nested scope stops MediaStream
+-->
+
+<body x-data="appData()" @cam:saved.window="
+        if ($event.detail.mode === 'photo'){
+          addToast('Foto berhasil disimpan!','📷');
+          addActivity('📷','Ambil Foto','Kamera utama');
+          stats.cam++;
+        } else {
+          addToast('Video berhasil disimpan!','🎥');
+          addActivity('📷','Rekam Video','Kamera depan');
+          stats.cam++;
+        }
+        modal = null;
+      ">
+
+  <!-- ══ SIDEBAR OVERLAY (mobile) ══════════════════════════════ -->
+  <div class="sidebar-overlay" x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"></div>
+
+  <!-- ══ SIDEBAR ════════════════════════════════════════════════ -->
+  <aside class="sidebar" :class="{ open: sidebarOpen }">
+    <div class="sidebar-brand">
+      <div class="brand-logo">Intent<span>App</span></div>
+      <div class="brand-sub">Implicit Intent Platform</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Utama</div>
+      <a class="nav-item" :class="{ active: activeNav === 'dashboard' }"
+        @click="activeNav = 'dashboard'; sidebarOpen = false">
+        <span class="icon">🏠</span> Dashboard
+      </a>
+
+      <div class="nav-section-label">Implicit Intent</div>
+      <a class="nav-item" @click="modal = 'maps'; sidebarOpen = false">
+        <span class="icon">📍</span> Google Maps
+      </a>
+      <a class="nav-item" @click="modal = 'camera'; sidebarOpen = false">
+        <span class="icon">📷</span> Kamera
+        <span class="nav-badge">Baru</span>
+      </a>
+      <a class="nav-item" @click="modal = 'share'; sidebarOpen = false">
+        <span class="icon">💬</span> Kirim Teks
+      </a>
+      <a class="nav-item" @click="modal = 'news'; sidebarOpen = false">
+        <span class="icon">📰</span> Berita &amp; Sosmed
+      </a>
+
+      <div class="nav-section-label">Lainnya</div>
+      <a class="nav-item" :class="{ active: activeNav === 'history' }"
+        @click="activeNav = 'history'; sidebarOpen = false">
+        <span class="icon">📋</span> Riwayat Intent
+      </a>
+      <a class="nav-item" :class="{ active: activeNav === 'settings' }"
+        @click="activeNav = 'settings'; sidebarOpen = false">
+        <span class="icon">⚙️</span> Pengaturan
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">US</div>
+        <div class="user-info">
+          <div class="user-name">User</div>
+          <div class="user-email">user@email.com</div>
+        </div>
+        <button class="logout-btn"
+          @click="addToast('Sampai jumpa!','👋'); setTimeout(() => window.location.href = 'login.html', 900);"
+          title="Logout">⏏</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN CONTENT ═══════════════════════════════════════════ -->
+  <div class="main-content">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="Buka sidebar">☰</button>
+        <div class="page-title" x-text="activeNav === 'dashboard' ? 'Dashboard'
+                   : activeNav === 'history'   ? 'Riwayat Intent'
+                   : 'Pengaturan'">
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" @click="toggleDarkMode()" title="Toggle dark mode" style="cursor:pointer">
+          <span x-text="darkMode ? '☀️' : '🌙'"></span>
+        </button>
+        <div class="topbar-btn" title="Notifikasi">🔔<div class="notif-dot"></div>
+        </div>
+        <div class="topbar-btn" title="Bantuan">❓</div>
+        <div class="user-avatar" title="User">US</div>
+      </div>
+    </header>
+
+    <main class="content-area">
+
+      <!-- ══════════ DASHBOARD ══════════════════════════════ -->
+      <div x-show="activeNav === 'dashboard'" x-cloak>
+
+        <div class="welcome-banner">
+          <div>
+            <h2>Selamat datang 👋</h2>
+            <p>Kelola semua Implicit Intent Android Anda dalam satu dashboard.</p>
+          </div>
+          <div class="welcome-emoji">📱</div>
+        </div>
+
+        <!-- Stats — values are reactive (increment on use) -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon maps">📍</div>
+            <div class="stat-label">Maps Dibuka</div>
+            <div class="stat-value" x-text="stats.maps"></div>
+            <div class="stat-change">↑ 12% minggu ini</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon cam">📷</div>
+            <div class="stat-label">Foto/Video</div>
+            <div class="stat-value" x-text="stats.cam"></div>
+            <div class="stat-change">↑ 8% minggu ini</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon share">💬</div>
+            <div class="stat-label">Pesan Terkirim</div>
+            <div class="stat-value" x-text="stats.share"></div>
+            <div class="stat-change">↑ 24% minggu ini</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon news">📰</div>
+            <div class="stat-label">Artikel Dibuka</div>
+            <div class="stat-value" x-text="stats.news"></div>
+            <div class="stat-change down">↓ 3% minggu ini</div>
+          </div>
+        </div>
+
+        <!-- Intent cards -->
+        <div class="section-header">
+          <div>
+            <div class="section-title">Fitur Implicit Intent</div>
+            <div class="section-sub">Tap kartu untuk mengakses fitur</div>
+          </div>
+        </div>
+        <div class="intent-grid">
+          <div class="intent-card maps" @click="modal = 'maps'">
+            <span class="intent-icon-wrap">📍</span>
+            <div class="intent-name">Google Maps</div>
+            <div class="intent-desc">Buka Google Maps untuk mencari lokasi, navigasi, atau melihat peta interaktif.
+            </div>
+            <span class="intent-badge">ACTION_VIEW + geo URI</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+          <div class="intent-card camera" @click="modal = 'camera'">
+            <span class="intent-icon-wrap">📷</span>
+            <div class="intent-name">Kamera</div>
+            <div class="intent-desc">Buka kamera perangkat untuk mengambil foto atau merekam video secara langsung.
+            </div>
+            <span class="intent-badge">ACTION_IMAGE_CAPTURE</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+          <div class="intent-card share" @click="modal = 'share'">
+            <span class="intent-icon-wrap">💬</span>
+            <div class="intent-name">Kirim Teks</div>
+            <div class="intent-desc">Bagikan teks ke WhatsApp, Telegram, Twitter, SMS, atau aplikasi lain yang tersedia.
+            </div>
+            <span class="intent-badge">ACTION_SEND text/plain</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+          <div class="intent-card news" @click="modal = 'news'">
+            <span class="intent-icon-wrap">📰</span>
+            <div class="intent-name">Berita &amp; Media Sosial</div>
+            <div class="intent-desc">Buka aplikasi berita atau platform media sosial langsung dari dalam aplikasi.</div>
+            <span class="intent-badge">ACTION_VIEW + URL</span>
+            <div class="intent-arrow">↗</div>
+          </div>
+        </div>
+
+        <!-- Recent activity (max 6) -->
+        <div class="section-header">
+          <div>
+            <div class="section-title">Riwayat Aktivitas</div>
+            <div class="section-sub">Intent yang terakhir digunakan</div>
+          </div>
+          <button class="view-all-btn" @click="activeNav = 'history'; window.scrollTo({top:0,behavior:'smooth'})">
+            Lihat semua →
+          </button>
+        </div>
+        <div class="activity-card">
+          <template x-for="(act, i) in activities.slice(0,6)" :key="i">
+            <div class="activity-item">
+              <div class="activity-dot" :style="'background:'+act.color"><span x-text="act.icon"></span></div>
+              <div class="activity-info">
+                <div class="activity-title" x-text="act.title"></div>
+                <div class="activity-time" x-text="act.desc + ' · ' + act.time"></div>
+              </div>
+              <div class="activity-status" :style="'background:'+act.statusColor+';color:'+act.statusText"
+                x-text="act.status"></div>
+            </div>
+          </template>
+        </div>
+      </div><!-- /dashboard -->
+
+      <!-- ══════════ HISTORY ════════════════════════════════ -->
+      <div x-show="activeNav === 'history'" x-cloak>
+        <div class="section-header">
+          <div>
+            <div class="section-title">Riwayat Intent</div>
+            <div class="section-sub">Log lengkap semua aktivitas Intent yang telah dilakukan</div>
+          </div>
+          <button class="view-all-btn" style="color:var(--red)"
+            @click="if(activities.length){ addToast('Riwayat dihapus','🗑️'); activities=[]; }">
+            Hapus semua
+          </button>
+        </div>
+        <div class="activity-card">
+          <template x-if="activities.length === 0">
+            <div style="padding:32px;text-align:center;color:var(--muted);font-size:.88rem;">
+              Belum ada riwayat aktivitas.
+            </div>
+          </template>
+          <template x-for="(act, i) in activities" :key="i">
+            <div class="activity-item">
+              <div class="activity-dot" :style="'background:'+act.color"><span x-text="act.icon"></span></div>
+              <div class="activity-info">
+                <div class="activity-title" x-text="act.title"></div>
+                <div class="activity-time" x-text="act.desc + ' · ' + act.time"></div>
+              </div>
+              <div class="activity-status" :style="'background:'+act.statusColor+';color:'+act.statusText"
+                x-text="act.status"></div>
+            </div>
+          </template>
+        </div>
+      </div><!-- /history -->
+
+      <!-- ══════════ SETTINGS ═══════════════════════════════ -->
+      <div x-show="activeNav === 'settings'" x-cloak>
+        <div class="section-header">
+          <div>
+            <div class="section-title">Pengaturan</div>
+            <div class="section-sub">Konfigurasi aplikasi dan preferensi</div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="setting-item">
+            <div class="setting-label">Tema Aplikasi</div>
+            <div class="setting-desc">Pilih tema yang sesuai dengan preferensi Anda</div>
+            <select class="setting-select">
+              <option>Terang</option>
+              <option>Gelap</option>
+              <option>Otomatis</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">Notifikasi</div>
+            <div class="setting-desc">Aktifkan notifikasi untuk aktivitas Intent</div>
+            <label class="setting-toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">Bahasa</div>
+            <div class="setting-desc">Pilih bahasa aplikasi</div>
+            <select class="setting-select">
+              <option>Indonesia</option>
+              <option>English</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">Tentang</div>
+            <div class="setting-desc">IntentApp v1.0.0 — Implicit Intent Platform</div>
+            <span style="font-size:.78rem;color:var(--accent);font-weight:600;">v1.0.0</span>
+          </div>
+        </div>
+      </div><!-- /settings -->
+
+    </main>
+  </div><!-- /main-content -->
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODALS  (siblings of .main-content inside <body>)
+  ══════════════════════════════════════════════════════════ -->
+
+  <!-- MAPS -->
+  <div class="modal-overlay" x-show="modal === 'maps'" x-cloak @click.self="modal = null">
+    <div class="modal-box">
+      <button class="modal-close" @click="modal = null" aria-label="Tutup">✕</button>
+      <div class="modal-icon">📍</div>
+      <div class="modal-title">Buka Google Maps</div>
+      <div class="modal-desc">Masukkan nama lokasi atau tempat yang ingin Anda cari di Google Maps.</div>
+      <input class="modal-input" type="text" placeholder="Cth: Monas, Jakarta" x-model="mapQuery"
+        @keyup.enter="openMaps()" />
+      <div class="field-label">Lokasi Cepat</div>
+      <div class="location-chips">
+        <template x-for="loc in quickLocs" :key="loc">
+          <button class="chip" @click="mapQuery = loc" x-text="loc"></button>
+        </template>
+      </div>
+      <button class="btn-primary" @click="openMaps()">📍 Buka Google Maps</button>
+      <button class="btn-secondary" @click="modal = null">Batal</button>
+      <div class="code-box">
+        <div class="code-label">📌 Intent Android</div>
+        <code class="code-snippet">Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=..."))</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMERA — nested x-data scope for full camera lifecycle management -->
+  <div class="modal-overlay" x-show="modal === 'camera'" x-cloak @click.self="closeCameraModal()">
+    <div class="modal-box cam-modal-box" x-data="cameraData()" @cam:forceclose.window="stopStream(); view='choose';">
+
+      <!-- choose -->
+      <template x-if="view === 'choose'">
+        <div>
+          <button class="modal-close" @click="closeCameraModal()" aria-label="Tutup">✕</button>
+          <div class="modal-icon">📷</div>
+          <div class="modal-title">Buka Kamera</div>
+          <div class="modal-desc">Pilih mode atau gunakan kamera langsung dari browser.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
+            <button class="cam-btn photo" @click="startCamera('photo','environment')">
+              <div class="cam-icon">📸</div>
+              <div class="cam-title">Ambil Foto</div>
+              <div class="cam-sub">Kamera langsung</div>
+            </button>
+            <button class="cam-btn video" @click="startCamera('video','environment')">
+              <div class="cam-icon">🎥</div>
+              <div class="cam-title">Rekam Video</div>
+              <div class="cam-sub">Rekam langsung</div>
+            </button>
+          </div>
+          <div class="cam-fallback-row">
+            <span class="cam-fallback-label">Atau pilih dari file:</span>
+            <button class="cam-fallback-btn" @click="fallbackPhoto()">🖼 Foto</button>
+            <button class="cam-fallback-btn" @click="fallbackVideo()">📹 Video</button>
+          </div>
+          <div class="code-box">
+            <div class="code-label">📌 Intent Android</div>
+            <code class="code-snippet">Intent(MediaStore.ACTION_IMAGE_CAPTURE)</code>
+          </div>
+          <button class="btn-secondary mt-3" @click="closeCameraModal()">Tutup</button>
+        </div>
+      </template>
+
+      <!-- live preview -->
+      <template x-if="view === 'live'">
+        <div class="cam-live-wrap">
+          <div class="cam-live-header">
+            <button class="cam-live-back" @click="stopStream(); view='choose'">← Kembali</button>
+            <span class="cam-live-mode" x-text="mode==='photo'?'📸 Mode Foto':'🎥 Mode Video'"></span>
+            <button class="cam-live-flip" @click="flipCamera()" title="Balik Kamera">🔄</button>
+          </div>
+          <div class="cam-viewport">
+            <video id="cam-preview" class="cam-video" autoplay muted playsinline></video>
+            <div class="cam-rec-badge" x-show="isRecording">
+              <span class="cam-rec-dot"></span>
+              <span x-text="recordLabel"></span>
+            </div>
+          </div>
+          <canvas id="cam-canvas" style="display:none"></canvas>
+          <div class="cam-controls">
+            <template x-if="mode === 'photo'">
+              <button class="cam-shutter" @click="takePhoto()" title="Ambil Foto">
+                <div class="cam-shutter-inner"></div>
+              </button>
+            </template>
+            <template x-if="mode === 'video' && !isRecording">
+              <button class="cam-shutter record" @click="startRecord()" title="Mulai Rekam">
+                <div class="cam-shutter-inner record-inner"></div>
+              </button>
+            </template>
+            <template x-if="mode === 'video' && isRecording">
+              <button class="cam-shutter stop" @click="stopRecord()" title="Hentikan">
+                <div class="cam-shutter-inner stop-inner"></div>
+              </button>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <!-- result -->
+      <template x-if="view === 'result'">
+        <div>
+          <button class="modal-close" @click="retake(); closeCameraModal()" aria-label="Tutup">✕</button>
+          <div class="modal-title" style="margin-bottom:12px"
+            x-text="mode==='photo'?'📸 Foto Berhasil!':'🎥 Video Berhasil!'"></div>
+          <template x-if="mode === 'photo'">
+            <img :src="capturedURL" class="cam-result-img" alt="Hasil foto" />
+          </template>
+          <template x-if="mode === 'video'">
+            <video :src="capturedURL" class="cam-result-img" controls></video>
+          </template>
+          <div class="cam-result-actions">
+            <button class="btn-primary" @click="saveResult()">💾 Simpan</button>
+            <button class="btn-secondary" @click="retake()">🔄 Ambil Ulang</button>
+          </div>
+          <button class="btn-secondary mt-2" @click="retake(); closeCameraModal()">Tutup</button>
+        </div>
+      </template>
+
+      <!-- error -->
+      <template x-if="view === 'error'">
+        <div>
+          <button class="modal-close" @click="closeCameraModal()" aria-label="Tutup">✕</button>
+          <div class="cam-error-icon">⚠️</div>
+          <div class="modal-title">Kamera Tidak Dapat Dibuka</div>
+          <div class="cam-error-msg" x-text="errorMsg"></div>
+          <template x-if="permDenied">
+            <div class="cam-perm-steps">
+              <div class="cam-perm-title">Cara mengaktifkan izin:</div>
+              <ol class="cam-perm-list">
+                <li>Klik ikon 🔒 atau ⓘ di address bar browser</li>
+                <li>Cari <strong>Kamera</strong> → ubah ke <strong>Izinkan</strong></li>
+                <li>Muat ulang halaman ini</li>
+              </ol>
+            </div>
+          </template>
+          <div class="cam-result-actions">
+            <button class="btn-primary" @click="startCamera(mode,facingMode)">🔄 Coba Lagi</button>
+            <button class="btn-secondary" @click="fallbackPhoto()">📁 Pilih File</button>
+          </div>
+          <button class="btn-secondary mt-2" @click="closeCameraModal()">Tutup</button>
+        </div>
+      </template>
+
+    </div>
+  </div><!-- /camera modal -->
+
+  <!-- SHARE -->
+  <div class="modal-overlay" x-show="modal === 'share'" x-cloak @click.self="modal = null">
+    <div class="modal-box">
+      <button class="modal-close" @click="modal = null" aria-label="Tutup">✕</button>
+      <div class="modal-icon">💬</div>
+      <div class="modal-title">Kirim Teks</div>
+      <div class="modal-desc">Tulis pesan Anda dan pilih aplikasi tujuan pengiriman.</div>
+      <textarea class="modal-input" rows="3" placeholder="Tulis pesan di sini..." x-model="shareText"
+        aria-label="Pesan"></textarea>
+      <div class="field-label">Kirim via</div>
+      <div class="share-apps">
+        <template x-for="app in shareApps" :key="app.id">
+          <button class="share-btn" :class="{ active: shareTarget === app.id }" @click="shareTarget = app.id">
+            <div class="share-btn-icon" x-text="app.icon"></div>
+            <div class="share-btn-label" x-text="app.label"></div>
+          </button>
+        </template>
+      </div>
+      <button class="btn-primary" @click="doShare()">💬 Kirim Sekarang</button>
+      <button class="btn-secondary" @click="modal = null">Batal</button>
+      <div class="code-box">
+        <div class="code-label">📌 Intent Android</div>
+        <code
+          class="code-snippet">Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(EXTRA_TEXT,"...") }</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEWS -->
+  <div class="modal-overlay" x-show="modal === 'news'" x-cloak @click.self="modal = null">
+    <div class="modal-box modal-box-wide">
+      <button class="modal-close" @click="modal = null" aria-label="Tutup">✕</button>
+      <div class="modal-icon">📰</div>
+      <div class="modal-title">Berita &amp; Media Sosial</div>
+      <div class="modal-desc">Pilih platform yang ingin Anda buka.</div>
+      <div class="field-label">📰 Portal Berita</div>
+      <div class="news-grid" style="margin-bottom:18px">
+        <template x-for="site in newsSites" :key="site.name">
+          <div class="news-tile" @click="openNews(site.url,site.name)">
+            <div class="tile-cat" x-text="site.emoji+' '+site.cat"></div>
+            <div class="tile-title" x-text="site.name"></div>
+          </div>
+        </template>
+      </div>
+      <div class="field-label">📱 Media Sosial</div>
+      <div class="social-grid">
+        <template x-for="s in socialLinks" :key="s.name">
+          <div class="news-tile social" @click="openNews(s.url,s.name)">
+            <div class="tile-emoji" x-text="s.emoji"></div>
+            <div class="tile-name" x-text="s.name"></div>
+          </div>
+        </template>
+      </div>
+      <div class="code-box">
+        <div class="code-label">📌 Intent Android</div>
+        <code class="code-snippet">Intent(Intent.ACTION_VIEW, Uri.parse("https://kompas.com"))</code>
+      </div>
+      <button class="btn-secondary mt-2" @click="modal = null">Tutup</button>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div class="toast-wrap">
+    <template x-for="t in toasts" :key="t.id">
+      <div class="toast">
+        <span x-text="t.emoji"></span>
+        <span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <!-- Alpine.js — loaded LAST so DOM is fully parsed first -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script>
+    /**
+     * appData() registered via Alpine.data() so all JS lives in
+     * a proper script context — no attribute-string escaping,
+     * full ES2015+ syntax, easy to read and maintain.
+     */
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('appData', () => ({
+
+        /* ── UI state ── */
+        sidebarOpen: false,
+        modal: null,
+        activeNav: 'dashboard',
+        darkMode: localStorage.getItem('intentapp-darkmode') === 'true',
+
+        init() {
+          this.applyDarkMode();
+        },
+
+        applyDarkMode() {
+          if (this.darkMode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        },
+
+        toggleDarkMode() {
+          this.darkMode = !this.darkMode;
+          localStorage.setItem('intentapp-darkmode', this.darkMode);
+          this.applyDarkMode();
+          this.addToast(this.darkMode ? 'Mode gelap aktif 🌙' : 'Mode terang aktif ☀️', '🎨');
+        },
+
+        /* ── Form state ── */
+        mapQuery: 'Jakarta, Indonesia',
+        shareText: 'Halo! Saya menggunakan IntentApp - platform Android pintar 🚀',
+        shareTarget: 'whatsapp',
+
+        /* ── Stats (reactive — increment on each use) ── */
+        stats: { maps: 24, cam: 87, share: 156, news: 43 },
+
+        /* ── Static lists ── */
+        quickLocs: ['Monas Jakarta', 'Borobudur Temple', 'Bali Beach', 'Raja Ampat', 'Komodo Island'],
+
+        shareApps: [
+          { id: 'whatsapp', icon: '💬', label: 'WhatsApp' },
+          { id: 'telegram', icon: '✈️', label: 'Telegram' },
+          { id: 'twitter', icon: '🐦', label: 'X/Twitter' },
+          { id: 'sms', icon: '📱', label: 'SMS' },
+          { id: 'native', icon: '🔗', label: 'Bagikan' },
+        ],
+
+        newsSites: [
+          { name: 'Kompas', url: 'https://www.kompas.com', emoji: '🗞️', cat: 'Umum' },
+          { name: 'Detik.com', url: 'https://www.detik.com', emoji: '📡', cat: 'Umum' },
+          { name: 'Tempo', url: 'https://www.tempo.co', emoji: '📋', cat: 'Investigasi' },
+          { name: 'CNN Indonesia', url: 'https://www.cnnindonesia.com', emoji: '📺', cat: 'Internasional' },
+        ],
+
+        socialLinks: [
+          { name: 'Instagram', url: 'https://www.instagram.com', emoji: '📸' },
+          { name: 'Twitter/X', url: 'https://www.twitter.com', emoji: '🐦' },
+          { name: 'TikTok', url: 'https://www.tiktok.com', emoji: '🎵' },
+          { name: 'YouTube', url: 'https://www.youtube.com', emoji: '▶️' },
+          { name: 'Facebook', url: 'https://www.facebook.com', emoji: '👥' },
+          { name: 'LinkedIn', url: 'https://www.linkedin.com', emoji: '💼' },
+        ],
+
+        /* ── Activity log ── */
+        activities: [
+          { icon: '📍', title: 'Buka Google Maps', desc: 'Lokasi: Jakarta', time: '2 menit lalu', status: 'Berhasil', color: '#10B981', statusColor: '#DCFCE7', statusText: '#166534' },
+          { icon: '📷', title: 'Ambil Foto', desc: 'Kamera utama', time: '5 menit lalu', status: 'Berhasil', color: '#3B82F6', statusColor: '#DBEAFE', statusText: '#1E40AF' },
+          { icon: '💬', title: 'Bagikan Teks', desc: 'Ke WhatsApp', time: '10 menit lalu', status: 'Berhasil', color: '#8B5CF6', statusColor: '#EDE9FE', statusText: '#5B21B6' },
+          { icon: '📰', title: 'Buka Berita', desc: 'Kompas.com', time: '15 menit lalu', status: 'Berhasil', color: '#F59E0B', statusColor: '#FEF3C7', statusText: '#92400E' },
+          { icon: '📍', title: 'Buka Google Maps', desc: 'Lokasi: Bandung', time: '1 jam lalu', status: 'Berhasil', color: '#10B981', statusColor: '#DCFCE7', statusText: '#166534' },
+          { icon: '📷', title: 'Ambil Video', desc: 'Kamera depan', time: '2 jam lalu', status: 'Berhasil', color: '#3B82F6', statusColor: '#DBEAFE', statusText: '#1E40AF' },
+        ],
+
+        /* ── Toasts ── */
+        toasts: [],
+
+        /* ─────────────────── HELPERS ──────────────────────── */
+        _colorOf(icon) {
+          return { '📍': '#10B981', '📷': '#3B82F6', '💬': '#8B5CF6', '📰': '#F59E0B' }[icon] || '#6366F1';
+        },
+
+        addToast(msg, emoji) {
+          const id = Date.now();
+          emoji = emoji || '✅';
+          this.toasts.push({ id, msg, emoji });
+          setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
+        },
+
+        addActivity(icon, title, desc, status) {
+          status = status || 'Berhasil';
+          const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          const color = this._colorOf(icon);
+          const statusColor = status === 'Berhasil' ? '#DCFCE7' : '#FEE2E2';
+          const statusText = status === 'Berhasil' ? '#166534' : '#991B1B';
+          this.activities.unshift({ icon, title, desc, time, status, color, statusColor, statusText });
+          if (this.activities.length > 50) this.activities.pop();
+        },
+
+        /* Closes camera modal AND tells nested scope to release stream */
+        closeCameraModal() {
+          document.dispatchEvent(new CustomEvent('cam:forceclose'));
+          this.modal = null;
+        },
+
+        /* ─────────────────── FEATURE ACTIONS ──────────────── */
+
+        openMaps() {
+          const q = encodeURIComponent(this.mapQuery || 'Jakarta');
+          window.open('https://www.google.com/maps/search/?api=1&query=' + q, '_blank');
+          this.stats.maps++;
+          this.addToast('Membuka Google Maps...', '📍');
+          this.addActivity('📍', 'Buka Google Maps', 'Lokasi: ' + (this.mapQuery || 'Jakarta'));
+          this.modal = null;
+        },
+
+        doShare() {
+          const text = this.shareText;
+          const target = this.shareTarget;
+
+          if (target === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+          else if (target === 'telegram') window.open('https://t.me/share/url?url=https://intentapp.id&text=' + encodeURIComponent(text), '_blank');
+          else if (target === 'twitter') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank');
+          else if (target === 'sms') window.open('sms:?body=' + encodeURIComponent(text));
+          else if (target === 'native') {
+            if (navigator.share) {
+              navigator.share({ title: 'IntentApp', text });
+            } else {
+              navigator.clipboard.writeText(text);
+              this.addToast('Teks disalin ke clipboard!', '📋');
+            }
+          } else {
+            navigator.clipboard.writeText(text);
+            this.addToast('Teks disalin ke clipboard!', '📋');
+          }
+
+          const app = this.shareApps.find(a => a.id === target);
+          const label = app ? app.label : target;
+          if (target !== 'native') this.addToast('Membuka ' + label + '...', '💬');
+          this.stats.share++;
+          this.addActivity('💬', 'Bagikan Teks', 'Ke ' + label);
+          this.modal = null;
+        },
+
+        openNews(url, name) {
+          window.open(url, '_blank');
+          this.stats.news++;
+          this.addToast('Membuka ' + name + '...', '📰');
+          this.addActivity('📰', 'Buka Berita', name);
+          this.modal = null;
+        },
+      }));
+    });
+
+    function cameraData() {
+      return {
+        view: 'choose',
+        mode: 'photo',
+        facingMode: 'environment',
+        stream: null,
+        mediaRecorder: null,
+        recordedChunks: [],
+        isRecording: false,
+        recordSec: 0,
+        recordTimer: null,
+        capturedURL: null,
+        capturedBlob: null,
+        errorMsg: '',
+        permDenied: false,
+
+        get videoEl() {
+          return document.getElementById('cam-preview');
+        },
+        get recordLabel() {
+          const m = String(Math.floor(this.recordSec / 60)).padStart(2, '0');
+          const s = String(this.recordSec % 60).padStart(2, '0');
+          return m + ':' + s;
+        },
+
+        async startCamera(mode, facing) {
+          this.mode = mode || 'photo';
+          this.facingMode = facing || 'environment';
+          this.errorMsg = '';
+          this.permDenied = false;
+          this.view = 'live';
+          await this.$nextTick();
+          await this.acquireStream();
+        },
+
+        async acquireStream() {
+          this.stopStream();
+          try {
+            this.stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: this.facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+              audio: this.mode === 'video'
+            });
+            const v = this.videoEl;
+            if (v) { v.srcObject = this.stream; await v.play(); }
+          } catch (err) {
+            this.stopStream();
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+              this.permDenied = true;
+              this.errorMsg = 'Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser Anda, lalu coba lagi.';
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+              this.errorMsg = 'Tidak ada kamera yang ditemukan pada perangkat ini.';
+            } else if (err.name === 'NotReadableError') {
+              this.errorMsg = 'Kamera sedang digunakan oleh aplikasi lain.';
+            } else {
+              this.errorMsg = 'Gagal membuka kamera: ' + err.message;
+            }
+            this.view = 'error';
+          }
+        },
+
+        async flipCamera() {
+          this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment';
+          await this.acquireStream();
+        },
+
+        takePhoto() {
+          const vid = this.videoEl, cvs = document.getElementById('cam-canvas');
+          cvs.width = vid.videoWidth || 640; cvs.height = vid.videoHeight || 480;
+          cvs.getContext('2d').drawImage(vid, 0, 0);
+          cvs.toBlob(blob => {
+            this.capturedBlob = blob;
+            this.capturedURL = URL.createObjectURL(blob);
+            this.stopStream(); this.view = 'result';
+          }, 'image/jpeg', 0.92);
+        },
+
+        startRecord() {
+          if (!window.MediaRecorder) { this.errorMsg = 'Browser ini tidak mendukung perekaman video.'; this.view = 'error'; return; }
+          this.recordedChunks = [];
+          const opts = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+            ? { mimeType: 'video/webm;codecs=vp9' }
+            : MediaRecorder.isTypeSupported('video/webm') ? { mimeType: 'video/webm' } : {};
+          this.mediaRecorder = new MediaRecorder(this.stream, opts);
+          this.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) this.recordedChunks.push(e.data) };
+          this.mediaRecorder.onstop = () => {
+            const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+            this.capturedBlob = blob; this.capturedURL = URL.createObjectURL(blob);
+            this.stopStream(); this.view = 'result';
+          };
+          this.mediaRecorder.start(100);
+          this.isRecording = true; this.recordSec = 0;
+          this.recordTimer = setInterval(() => { this.recordSec++; }, 1000);
+        },
+
+        stopRecord() {
+          if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            clearInterval(this.recordTimer);
+          }
+        },
+
+        saveResult() {
+          const ext = this.mode === 'photo' ? 'jpg' : 'webm';
+          const a = document.createElement('a');
+          a.href = this.capturedURL; a.download = 'intentapp-' + Date.now() + '.' + ext; a.click();
+          document.dispatchEvent(new CustomEvent('cam:saved', { detail: { mode: this.mode } }));
+        },
+
+        retake() {
+          if (this.capturedURL) URL.revokeObjectURL(this.capturedURL);
+          this.capturedURL = null; this.capturedBlob = null; this.view = 'choose';
+        },
+
+        stopStream() {
+          if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+          if (this.isRecording) { clearInterval(this.recordTimer); this.isRecording = false; }
+        },
+
+        fallbackPhoto() {
+          const i = document.createElement('input');
+          i.type = 'file'; i.accept = 'image/*'; i.capture = 'environment';
+          i.onchange = () => { if (i.files && i.files[0]) { this.capturedURL = URL.createObjectURL(i.files[0]); this.capturedBlob = i.files[0]; this.mode = 'photo'; this.view = 'result'; } };
+          i.click();
+        },
+
+        fallbackVideo() {
+          const i = document.createElement('input');
+          i.type = 'file'; i.accept = 'video/*'; i.capture = 'camcorder';
+          i.onchange = () => { if (i.files && i.files[0]) { this.capturedURL = URL.createObjectURL(i.files[0]); this.capturedBlob = i.files[0]; this.mode = 'video'; this.view = 'result'; } };
+          i.click();
+        }
+      };
+    }
+  </script>
+
+</body>
+
+</html>
